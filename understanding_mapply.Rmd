@@ -1,0 +1,21 @@
+---
+title: "Understanding mapply"
+author: "Devin"
+date: "Tuesday, April 22, 2014"
+output: html_document
+---
+
+```{r}
+id <- 50
+rep <- 500
+numinds <- 1:10
+out <- mapply(function(id, rep, numinds) {
+ id_sample <- sample(id, size =  numinds, replace = TRUE)
+ rep_sample <- sample(rep, size = numinds, replace = TRUE)
+ return(data.frame(id_sample, rep_sample))
+}, id, rep, numinds, SIMPLIFY = FALSE)
+
+mapply(rnorm, numinds, rep, id)
+
+```
+
