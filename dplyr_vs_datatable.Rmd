@@ -16,6 +16,8 @@ database <- within(database, {
   ISM <- ifelse(ID %% 2 == 0, 1, 0)
 })
 
+#
+database_dt <- data.table(database)
 head(database)
 ### functions
 generate_samples <- function(ID, REP, num_inds) {
@@ -28,12 +30,11 @@ generate_samples <- function(ID, REP, num_inds) {
 generate_samples(unique(database$ID), REP = length(unique(database$REP)), num_inds = 10)
 
 
-generate_dataset_dt <- function(database, inds){
+generate_dataset_dt <- function(database_dt, inds){
 num_inds <- inds
-m <- generate_samples(unique(database$ID), REP = length(unique(database$REP)), num_inds = num_inds)
-dt <- data.table(database)
-setkey(dt, ID, REP)
-database_subset <- dt[J(m)]
+m <- generate_samples(unique(database_dt$ID), REP = length(unique(database_dt$REP)), num_inds = num_inds)
+setkey(database_dt, ID, REP)
+database_subset <- database_dt[J(m)]
 return(database_subset)
 }
 
@@ -43,20 +44,23 @@ m <- generate_samples(unique(database$ID), REP = length(unique(database$REP)), n
 database_subset <- semi_join(database, m)
 return(database_subset)
 }
-library(ggplot2)
-library(microbenchmark)
+suppressMessages(library(ggplot2))
+suppressMessages(library(microbenchmark))
 
 # check varying subset sizes 20 - 200 individuals
 tm <- microbenchmark(suppressMessages(generate_dataset_dplyr(database, 20)),
-                     generate_dataset_dt(database, 20),
+                     generate_dataset_dt(database_dt, 20),
                      suppressMessages(generate_dataset_dplyr(database, 50)),
-                     generate_dataset_dt(database, 50),
+                     generate_dataset_dt(database_dt, 50),
                      suppressMessages(generate_dataset_dplyr(database, 100)),
-                     generate_dataset_dt(database, 100),
+                     generate_dataset_dt(database_dt, 100),
                      suppressMessages(generate_dataset_dplyr(database, 200)),
-                     generate_dataset_dt(database, 200), times = 500L)
+                     generate_dataset_dt(database_dt, 200), times = 500L)
 tm
 autoplot(tm)
 ```
 
+```{r}
+sessionInfo()
+```
 
