@@ -1,0 +1,130 @@
+---
+title: "Examples for AUC functions"
+author: "Devin"
+date: "July 19, 2014"
+output: html_document
+---
+
+```{r}
+libraries <- c("knitr", "ggplot2", "PKPDdatasets", "PKPDmisc", "dplyr")
+suppressMessages(sapply(libraries, require, character.only=T))
+opts_chunk$set(tidy=F)
+```
+
+Use the terribly named `sd_oral_richpk` dataset from my `PKPDdatasets` package and `AUC_partial` and `AUC_inf` functions from `PKPDmisc`
+
+available via:
+```
+library(devtools)
+install_github("dpastoor/PKPDdatasets")
+install_github("dpastoor/PKPDmisc")
+```
+
+```{r}
+pkdata <- sd_oral_richpk
+head(pkdata)
+
+#convert all columns to caps for easier recall
+names(pkdata) <- toupper(names(pkdata))
+
+```
+
+## Basic summary and plots to get a feel for the data
+```{r}
+pkdata %>% filter(!duplicated(ID)) %>%  select(AGE, WEIGHT, GENDER, RACE) %>% summary
+```
+
+```{r}
+ggdat  <- ggplot(pkdata, aes(x = TIME, y = CONC, group = ID)) 
+ggdat + geom_line() + geom_point() + 
+  base_theme() + xlab("Time (hours)") + ylab("Concentration (mg/L)")
+```
+
+# AUC function examples
+
+## AUC_partial examples
+Get summary of AUC 0-tlast
+```{r}
+pkdata %>% 
+  group_by(ID) %>% 
+  summarize(AUC0_tlast = AUC_partial(TIME, CONC, partialtime = max(TIME))) %>% 
+  head(n = 10)
+```
+
+If you want to carry additional covariates for later summary add them as grouping variables
+
+```{r}
+aucs_gender_race  <- pkdata %>% 
+  group_by(ID, GENDER, RACE) %>% 
+  summarize(AUC0_tlast = AUC_partial(TIME, CONC, partialtime = max(TIME)))
+aucs_gender_race %>% head(n = 10)
+```
+
+You can then do additional summary statistics on a category (or combinations of categories)
+```{r}
+aucs_gender_race %>% group_by(GENDER) %>% 
+  summarize(meanAUC = mean(AUC0_tlast))
+aucs_gender_race %>% group_by(GENDER,RACE) %>% 
+  summarize(meanAUC = mean(AUC0_tlast))
+```
+
+## AUC_inf examples
+AUC_inf is a bit more complicated internally than AUC partial, in that there are multiple types of output you can get. This is actually a bad practice, and I will eventually re-write to have two separate functions depending on what the user wants.
+
+By default, the `AUC_infonly` argument is `TRUE` so only a vector of AUC0_infinity values are returned. This makes it usable inside of dplyr/plyr as you can only have single vector output.
+
+```{r}
+aucinfs_race  <- pkdata %>% 
+  group_by(ID,RACE) %>% 
+  summarize(AUC0_inf = AUC_inf(TIME, CONC))
+aucinfs_race %>% head(n = 10)
+```
+
+
+However, many times people want additional information, such as the number of points selected in the terminal phase, the adjusted R squared, lambda_z for t1/2, etc. So right now AUC_inf can also output a dataframe containing:
+
+* AUClast
+* AUCinf
+* Extra_percent
+* Adj.R.Sq
+* Lambda_z
+* Num_points_lambda_z
+
+The easiest way to do so is via the `do` function in dplyr
+
+```{r}
+AUCinf <- pkdata %>% group_by(ID) %>% 
+  do(AUC_inf(.$TIME, .$CONC, AUCinf_only = F))
+head(AUCinf)
+```
+
+You can also ask for them as individual columns inside of `summarize` and `mutate` commands by asking for specific column names
+
+```{r}
+aucinfs_extra  <- pkdata %>% 
+  group_by(ID,RACE) %>% 
+  summarize(AUC0_inf = AUC_inf(TIME, CONC),
+            extra_percent = round(AUC_inf(TIME, CONC, AUCinf_only = F)[["Extra_percent"]],2))
+aucinfs_extra %>% head(n = 10)
+```
+
+A general rule of thumb is you shouldn't have more than ~20% extra (that is `AUCtlast_inf - AUC0_tlast`) to make a valid inference about AUC0_inf, else you are extrapolating too much.
+
+### number of points used in AUC_inf extrapolation
+When the extrapolation from tlast to inf is happening, a linear model is fit to 3, 4, 5... of the last points to figure out which provides the best fit and use that to extrapolate from tlast to infinity. By default, the function only checks 3, 4, 5 points. However if you have rich sampling in the terminal phase and want to fit more you can specify via the `last_points` argument. 
+
+```{r}
+pkdata %>% 
+  group_by(ID,RACE) %>% 
+  summarize(AUC0_inf = AUC_inf(TIME, CONC, last_points = c(3, 4, 5, 6, 7)),
+            numpoints_extrap = AUC_inf(TIME, CONC, 
+                                       last_points = c(3, 4, 5, 6, 7), 
+                                       AUCinf_only = F)[["Num_points_lambda_z"]]) %>% 
+  head(n = 10)
+```
+
+
+```{r}
+sessionInfo()
+```
+
