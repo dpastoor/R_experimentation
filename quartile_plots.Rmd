@@ -1,0 +1,35 @@
+---
+title: "quartile plots"
+author: "Devin"
+date: "September 20, 2014"
+output: html_document
+---
+
+```{r}
+library(PKPDdatasets)
+dat <- pain_relief
+
+library(ggplot2)
+library(dplyr)
+dat %>% filter(TIME == 2.0) %>% ggplot(aes(x = CONC, y = PAINRELIEF)) + geom_point()
+dat_2hr <- dat %>% filter(TIME ==2)
+```
+
+```{r}
+dat_2hr$CONC_CUT <- cut(dat_2hr$CONC, breaks = quantile(dat_2hr$CONC), include.lowest = TRUE)
+
+# mean conc by cut
+mean_conc <- dat_2hr %>% group_by(CONC_CUT) %>%
+  mutate(BIN_CONC = mean(CONC),
+         PROP_RELIEF = mean(PAINRELIEF), 
+         n = n(),
+         SE = sqrt((PROP_RELIEF*(1-PROP_RELIEF)/n)),
+         UCI = PROP_RELIEF + 1.96*SE, 
+         LCI = PROP_RELIEF - 1.96*SE) %>% 
+                                                         select(CONC, PAINRELIEF, PAINSCORE, DOSE, CONC_CUT, BIN_CONC ,PROP_RELIEF, UCI, LCI)
+
+# need mean 'bin' conc values to map to x axis for plotting numerical concentrations on the CONC
+
+ggplot(mean_conc, aes(x = CONC, y = PAINRELIEF)) + geom_point() + geom_errorbar(aes(x = BIN_CONC, ymin = LCI, ymax = UCI)) + geom_point(aes(x = BIN_CONC, y = PROP_RELIEF), size = 2)
+```
+
