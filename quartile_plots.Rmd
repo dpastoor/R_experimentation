@@ -2,7 +2,7 @@
 title: "quartile plots"
 author: "Devin"
 date: "September 20, 2014"
-output: pdf_document
+output: html_document
 ---
 
 The goal of this excercise is to show how to use the cut function to create concentration bins. One common use is to create a quartile plot of the proportion of responders given a concentration range, thus the objective is to:
