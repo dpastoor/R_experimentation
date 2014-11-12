@@ -1,0 +1,3 @@
+library(PKPDdatasets)
+library(dplyr)
+sd_oral_richpk %>% group_by(Gender) %>% select(Age, Weight, Race) %>% do(data.frame(summary(.))) %>% filter(!is.na(Freq)) %>% arrange(Var2)
