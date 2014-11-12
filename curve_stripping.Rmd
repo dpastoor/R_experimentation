@@ -1,0 +1,98 @@
+---
+title: "curve stripping"
+author: "Devin"
+date: "Wednesday, September 03, 2014"
+output: html_document
+---
+
+## IV data
+```{r}
+library(PKPDmisc)
+library(dplyr)
+```
+
+```{r, include = F}
+data <- read_csv_wunits("C:/Users/Devin/Dropbox/UMCTM/MS PHMX Course Material/Fall 2014/PHMX 602/Practice Problems/Demo/Multiple dose and simulatneous IV_ORAL/dapa_IV_ORAL_est.csv")
+```
+
+```{r}
+head(data)
+```
+
+First we must extract the IV data (OCC == 1)
+
+```{r}
+IV_data <- data %>% filter(OCC==1)
+```
+
+curve stripping requires a `DOSE` column so will extract from `AMT_IV` column
+```{r}
+IV_data <- IV_data %>% group_by(ID) %>% mutate(DOSE = max(AMT_IV))
+```
+
+There is a function `execute_curve_stripping` that will handle summarizing the data by dose and time to get mean concentration-time profiles by dose level, then will perform curve stripping. You simply need to pass in the dataframe and how many points are in the terminal phase.
+
+We can eyeball the terminal phase points graphically
+
+```{r, message=FALSE, warning=FALSE}
+library(ggplot2)
+ggplot(IV_data, aes(x = TIME, y = CONC, group = ID)) + geom_point() + geom_line() +
+  scale_y_log10()
+```
+
+Based on a basic eyeballing 7 points seems appropriate. 
+
+In this case the column names match the default `execute_curve_stripping` arguments
+so we simply need to pass the dataframe and the number of terminal points to get initial estimates
+```{r}
+execute_curve_stripping(IV_data, number_terminal_points = 7)
+```
+
+If you have differently named columns you can pass the column names to specific which columns should be used for TIME, DV, and DOSE
+```{r}
+IV_data2 <- rename(IV_data, c("TIME" = "TAD", "DOSE" = "dose", "CONC" = "DV"))
+head(IV_data2)
+
+# so must also include the column names
+execute_curve_stripping(IV_data2, "TAD", "DV", "dose", number_terminal_points = 7)
+```
+
+
+If you have already calculated the mean concentration time profiles in another program or would like to handle it manually in R, you can use the underlying function `strip_curves` to calculate the parameters from mean level data.
+
+```{r}
+mean_IV <- IV_data %>% group_by(TIME, DOSE) %>% summarize(geomean = exp(mean(log(CONC))))
+head(mean_IV)
+strip_curves(mean_IV$TIME, mean_IV$geomean, DOSE = mean_IV$DOSE, number_terminal_points = 7)
+```
+
+Note, that this only works for a *single* dose level at a time, if you would like to calculate multiple dose levels you can use the `do()` function in dplyr or manually subset out each dose and run them separately. This is only the case for the `strip_curves` function, the `execute_curve_stripping` already handles multiple dose levels in this fashion.
+
+```{r}
+mean_IV %>% group_by(DOSE) %>% do(strip_curves(TIME = .$TIME, .$geomean,DOSE = .$DOSE, number_terminal_points = 7))
+```
+
+In this case the dataset only has one dose group, but this will work for multiple dose groups.
+
+
+## oral data
+
+The curve stripping can also be used for oral data, though it still uses the IV formula so it will be biased, however should place the initial estimates in range for a naive pooled fit to hone the results. 
+
+In this dataset 3 ascending doses of 5000, 10000, and 25000 where given to each ID
+
+```{r}
+oral_data <- data %>% filter(OCC >1)
+```
+
+```{r}
+# get dose column all dose levels and remove placebo data as it will wreck havoc on the curve stripping with all 0 concentrations
+# we group by OCC as well to get the proper dose level for each ID for each occasion
+oral_data <- oral_data %>% group_by(ID, OCC) %>% mutate(DOSE = max(AMT_ORAL)) %>% filter(DOSE > 0)
+
+execute_curve_stripping(oral_data, TIME_name = "TAD", number_terminal_points = 7, oral=T)
+```
+
+As we can see it overpredicts Vc and Vp compared to IV, but this is to be expected as the equation for calculating Vp involves Cmax, which for oral data will be lower, and there is nothing to distiquish that the lower cmax is due the fact that there is absorption. Depending on the compound, there could also be bioavailability differences between oral and IV that also drive this difference. 
+
+Note: for oral data this calculation should be seen as relative Cl, Vc, etc.
