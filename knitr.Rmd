@@ -1,0 +1,85 @@
+---
+title: "knitr output"
+author: "Devin"
+date: "November 7, 2014"
+output: word_document
+---
+
+```{r libraries}
+libraries <- c("dplyr",
+               "ggplot2",
+               "knitr",
+               "PKPDdatasets",
+               "PKPDmisc"
+               )
+suppressMessages(sapply(libraries, require, character.only=T))
+opts_chunk$set(cache=T)
+```
+
+```{r}
+oral_data <- dapa_IV_oral %>% filter(FORMULATION == "ORAL")
+head(oral_data)
+```
+
+### Plot 1
+
+pdf, dpi 96
+```{r, dpi=96, dev='pdf'}
+ggplot(oral_data, aes(x = TAD, y = COBS, group = ID, color = OCC)) + geom_line() + 
+  facet_wrap(~ID)
+```
+
+pdf, dpi 300
+```{r, dpi=300, dev='pdf'}
+ggplot(oral_data, aes(x = TAD, y = COBS, group = ID, color = OCC)) + geom_line() + 
+  facet_wrap(~ID)
+```
+
+pdf fig.width 9
+```{r,dev='pdf', fig.width = 9}
+ggplot(oral_data, aes(x = TAD, y = COBS, group = ID, color = OCC)) + geom_line() + 
+  facet_wrap(~ID)
+```
+
+pdf fig.width 6.25, fig.height = 3
+```{r,dev='pdf', fig.width = 6.25, fig.height=3}
+ggplot(oral_data, aes(x = TAD, y = COBS, group = ID, color = OCC)) + geom_line() + 
+  facet_wrap(~ID)
+```
+
+defaults
+```{r}
+ggplot(oral_data, aes(x = TAD, y = COBS, group = ID, color = OCC)) + geom_line() + 
+  facet_wrap(~ID)
+```
+
+dpi 300
+```{r, dpi=300}
+ggplot(oral_data, aes(x = TAD, y = COBS, group = ID, color = OCC)) + geom_line() + 
+  facet_wrap(~ID)
+```
+
+fig.width=10, dpi 300
+```{r, fig.width=10, dpi=300}
+ggplot(oral_data, aes(x = TAD, y = COBS, group = ID, color = OCC)) + geom_line() + 
+  facet_wrap(~ID)
+```
+
+
+
+
+```{r, echo=FALSE, eval=F}
+ggplot(oral_data, aes(x = TAD, y = COBS, 
+                      group = interaction(ID, OCC), 
+                      color = factor(OCC))) + 
+  geom_line(size = 1.05) + 
+  facet_wrap(~ID) + base_theme_obs() +
+  xlab("Time After Dose, hours") +
+  ylab("Concentration, ug/mL") +
+  scale_color_discrete(name="Occasion") + scale_y_log10()
+```
+
+```{r}
+devtools::session_info()
+```
+
