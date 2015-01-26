@@ -1,0 +1,56 @@
+---
+title: "cut_function"
+author: "Devin"
+date: "Tuesday, June 17, 2014"
+output: html_document
+---
+
+Default of cut breaks to be closed for lowest and open for highest, this will cause the individual with the lowest value to not be assigned a level properly
+```{r}
+wt_quartiles <- quantile(Theoph$Wt)
+wt_quartiles
+Theoph$WTBINS <- cut(Theoph$Wt, breaks = wt_quartiles)
+
+# will not bin person with lowest weight
+head(subset(Theoph, Wt == wt_quartiles[1]))
+
+# heaviest person gets binned properly
+head(subset(Theoph, Wt == wt_quartiles[length(wt_quartiles)]))
+```
+
+Use argument `include.lowest` to include lowest (or highest if `right = FALSE`)
+
+```{r}
+Theoph$WTBINS_ALL <- cut(Theoph$Wt, breaks = wt_quartiles, include.lowest = TRUE)
+
+# WTBINS_ALL will bin person with lowest weight
+head(subset(Theoph, Wt == wt_quartiles[1]))
+
+# heaviest person still gets binned properly
+head(subset(Theoph, Wt == wt_quartiles[length(wt_quartiles)]))
+
+levels(Theoph$WTBINS_ALL)
+```
+
+Can extract the lower and upper bound
+```{r}
+# from cut documentation
+lower <-  as.numeric( sub("\\((.+),.*", "\\1", levels(Theoph$WTBINS)))
+upper <-  as.numeric( sub("[^,]*,([^]]*)\\]", "\\1", levels(Theoph$WTBINS)))
+lower
+upper
+```
+
+however if `include.lowest = TRUE` the lower argument will have an NA as for the lower bound for the lowest level 
+```{r}
+
+lower <-  as.numeric( sub("\\((.+),.*", "\\1", levels(Theoph$WTBINS_ALL)))
+upper <-  as.numeric( sub("[^,]*,([^]]*)\\]", "\\1", levels(Theoph$WTBINS_ALL)))
+lower
+upper
+```
+
+
+TODO: Break down the regular expression
+
+

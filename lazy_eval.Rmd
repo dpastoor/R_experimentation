@@ -1,0 +1,14 @@
+---
+title: "lazy evaluation"
+output: html_document
+---
+
+```{r}
+library(lazyeval)
+```
+
+```{r}
+devtools::session_info()
+```
+
+

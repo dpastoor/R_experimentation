@@ -1,0 +1,66 @@
+dplyr vs data.table comparions
+====================================
+
+Benchmark 1 - subsetting from a large dataframe
+```{r}
+suppressMessages(library(dplyr))
+suppressMessages(library(data.table))
+### create large data source -----------
+database <- data.frame(expand.grid(ID = 1:50, TIME = seq(0, 100, 1), REP = 1:250))
+database <- database[order(database$REP, database$ID, database$TIME),]
+database <- within(database, {
+  CONC <- runif(nrow(database), 1, 10)
+  DV <- runif(nrow(database), 1, 10)
+  IPRED <- runif(nrow(database), 1, 10)
+  PRED <- runif(nrow(database), 1, 10)
+  ISM <- ifelse(ID %% 2 == 0, 1, 0)
+})
+
+#
+database_dt <- data.table(database)
+head(database)
+### functions
+generate_samples <- function(ID, REP, num_inds) {
+  id <- sample(x=ID, size = num_inds, replace = TRUE)
+  rep <- sample.int(REP, size = num_inds, replace = FALSE)
+  data.frame("ID" = id, "REP"= rep)
+}
+
+# test key
+generate_samples(unique(database$ID), REP = length(unique(database$REP)), num_inds = 10)
+
+
+generate_dataset_dt <- function(database_dt, inds){
+num_inds <- inds
+m <- generate_samples(unique(database_dt$ID), REP = length(unique(database_dt$REP)), num_inds = num_inds)
+setkey(database_dt, ID, REP)
+database_subset <- database_dt[J(m)]
+return(database_subset)
+}
+
+generate_dataset_dplyr <- function(database, inds){
+num_inds <- inds
+m <- generate_samples(unique(database$ID), REP = length(unique(database$REP)), num_inds = num_inds)
+database_subset <- semi_join(database, m)
+return(database_subset)
+}
+suppressMessages(library(ggplot2))
+suppressMessages(library(microbenchmark))
+
+# check varying subset sizes 20 - 200 individuals
+tm <- microbenchmark(suppressMessages(generate_dataset_dplyr(database, 20)),
+                     generate_dataset_dt(database_dt, 20),
+                     suppressMessages(generate_dataset_dplyr(database, 50)),
+                     generate_dataset_dt(database_dt, 50),
+                     suppressMessages(generate_dataset_dplyr(database, 100)),
+                     generate_dataset_dt(database_dt, 100),
+                     suppressMessages(generate_dataset_dplyr(database, 200)),
+                     generate_dataset_dt(database_dt, 200), times = 500L)
+tm
+autoplot(tm)
+```
+
+```{r}
+sessionInfo()
+```
+

@@ -1,0 +1,17 @@
+{
+    "contents" : "library(PKPDdatasets)\nlibrary(dplyr)\nsd_oral_richpk %>% group_by(Gender) %>% select(Age, Weight, Race) %>% do(data.frame(summary(.))) %>% filter(!is.na(Freq)) %>% arrange(Var2)\n\n\nfilter(mtcars, between(row_number(), 5, n()))\n\nmtcars %>% filter(between(row_number(), 1, 3))\nTheoph %>% group_by(Subject) %>% \n  filter(between(row_number(), 1, 3))\n",
+    "created" : 1422203579211.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "684760821",
+    "id" : "9317FFD",
+    "lastKnownWriteTime" : 1422203588,
+    "path" : "~/Repos/R_experimentation/dplyr_experiments.Rmd",
+    "project_path" : "dplyr_experiments.Rmd",
+    "properties" : {
+    },
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "type" : "r_markdown"
+}

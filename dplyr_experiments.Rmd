@@ -1,0 +1,10 @@
+library(PKPDdatasets)
+library(dplyr)
+sd_oral_richpk %>% group_by(Gender) %>% select(Age, Weight, Race) %>% do(data.frame(summary(.))) %>% filter(!is.na(Freq)) %>% arrange(Var2)
+
+
+filter(mtcars, between(row_number(), 5, n()))
+
+mtcars %>% filter(between(row_number(), 1, 3))
+Theoph %>% group_by(Subject) %>% 
+  filter(between(row_number(), 1, 3))

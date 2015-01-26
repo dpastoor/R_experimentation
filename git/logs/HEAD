@@ -1,0 +1,7 @@
+0000000000000000000000000000000000000000 8facc073e104b8ddb47106e7affe70592662a964 Devin Pastoor <devin.pastoor@gmail.com> 1405778610 -0400	clone: from git@github.com:dpastoor/R_experimentation.git
+8facc073e104b8ddb47106e7affe70592662a964 8c70647ff857c2249933f5259bcaeb735abf5bb8 Devin Pastoor <devin.pastoor@gmail.com> 1405782104 -0400	commit: add AUC_functions example
+8c70647ff857c2249933f5259bcaeb735abf5bb8 da5f71216c0db4e714a786bb4e3f9ed658e9785f Devin Pastoor <devin.pastoor@gmail.com> 1411266957 -0400	commit: add quartile plots example
+da5f71216c0db4e714a786bb4e3f9ed658e9785f 254cdd54f42ad8ab04678e73c0ad14b399542968 Devin Pastoor <devin.pastoor@gmail.com> 1411268934 -0400	commit: minor update and knit html to publish
+254cdd54f42ad8ab04678e73c0ad14b399542968 ce4da18d8aea9d158bbcab647256599e1e58cb72 Devin Pastoor <devin.pastoor@gmail.com> 1411322264 -0400	commit: minor formatting
+ce4da18d8aea9d158bbcab647256599e1e58cb72 62f66006b0efa68a4498cf15e453e02f264a54d3 Devin Pastoor <devin.pastoor@gmail.com> 1415831341 -0500	commit: add knitr examples where testing output with vba script to resize output
+62f66006b0efa68a4498cf15e453e02f264a54d3 bc79c7e9c68edf96dfa1d4f89533c26595b3412c Devin Pastoor <devin.pastoor@gmail.com> 1415831367 -0500	pull: Merge made by the 'recursive' strategy.

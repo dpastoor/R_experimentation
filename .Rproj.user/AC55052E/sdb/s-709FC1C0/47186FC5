@@ -1,0 +1,18 @@
+{
+    "contents" : "---\ntitle: \"lazy evaluation\"\noutput: html_document\n---\n\n```{r}\nlibrary(lazyeval)\n```\n\n```{r}\ndevtools::session_info()\n```\n\n\n",
+    "created" : 1421637222819.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2239781071",
+    "id" : "47186FC5",
+    "lastKnownWriteTime" : 1421637312,
+    "path" : "~/Repos/R_experimentation/lazy_eval.Rmd",
+    "project_path" : "lazy_eval.Rmd",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 0,
+    "source_on_save" : false,
+    "type" : "r_markdown"
+}

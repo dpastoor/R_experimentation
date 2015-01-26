@@ -1,0 +1,20 @@
+---
+title: "summarize quantiles"
+output: html_document
+---
+
+Trying to figure out an automated way of labeling quantile column names when creating them
+
+eg want to pass in 5 and get q_5 as the column name
+
+```{r}
+library(dplyr)
+library(lazyeval)
+prob <- 0.1
+col_name <- "conc"
+
+dots = list(interp(~ quantile(var, prob), var = as.name(col_name)))
+Theoph %>% summarize_(.dots=setNames(dots, paste0("q_", prob*10))
+Theoph %>% summarize(q_5 = quantile(conc, 0.1))
+```
+
