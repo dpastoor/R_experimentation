@@ -85,3 +85,8 @@ ggplot(data = aug, aes(x = .fitted, y = .resid)) +
   labs(list(x = "Predicted log(CL)", y = "Residuals"))
 ```
 
+```{r}
+devtools::session_info()
+```
+
+
