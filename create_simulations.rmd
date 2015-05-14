@@ -120,13 +120,13 @@ replace_from_template <- function(file, patterns, replacement_df, output_dir = N
   # replace numeric values with the full string pattern that will be used from the pattern
   # eg 0.1 --> CL = 0.1
   for (i in seq_along(patterns)) {
-    replacement_df[[names(patterns)[[i]]]] <-  replace_from_pattern(patterns[i],
+      replacement_df[[names(patterns)[[i]]]] <-  replace_from_pattern(patterns[i],
                                                                   replacement_df[[names(patterns)[[i]]]])
   }
   
   # if no file_name column automatically give file names that correspond to the row number 
   if(is.null(replacement_df$file_name)) {
-    replacement_df$file_name <- paste0(1:nrow(replacement_df), ".mod")
+      replacement_df$file_name <- paste0(1:nrow(replacement_df), ".mod")
   }
   
   # loop through all combinations (1 per row) and write out the new file
@@ -134,11 +134,11 @@ replace_from_template <- function(file, patterns, replacement_df, output_dir = N
   new_file_lines <- str_replace_all(file_lines,
                                     setNames(unlist(replacement_df[i, names(patterns)]), patterns))
   
-  if (is.null(output_dir)) {
-    writeLines(new_file_lines, unlist(replacement_df[i, "file_name"]))
-  } else {
-    writeLines(new_file_lines, paste0(output_dir, unlist(replacement_df[i, "file_name"])))
-  }
+      if (is.null(output_dir)) {
+        writeLines(new_file_lines, unlist(replacement_df[i, "file_name"]))
+      } else {
+        writeLines(new_file_lines, paste0(output_dir, unlist(replacement_df[i, "file_name"])))
+      }
                     
   }
   return(TRUE)
@@ -146,13 +146,16 @@ replace_from_template <- function(file, patterns, replacement_df, output_dir = N
 
 ```
 
-Test to see that function replaces properly
+Test to see that `replace_from_pattern` function replaces properly
 ```{r}
+# how replacing a value from a template line should work via this implementation
 test_string <- "PLC_P = <PLC_P>"
 test_value <- 0.1
 test_result<- "PLC_P = 0.1"
 expect_equal(replace_from_pattern(test_string, test_value), test_result)
 
+
+# check to make sure will replace in a vectorized manner as well
 test_df <- data.frame(PLC_P = c(0.1, 0.2, 0.3))
 
 test_df$PLC_Preplacement <- replace_from_pattern(test_string, test_df$PLC_P)
