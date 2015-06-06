@@ -1,0 +1,154 @@
+---
+title: "setting-bins"
+author: "devin"
+date: "April 11, 2015"
+output: html_document
+---
+
+Setting bins in R, while not particulary difficult, is usually reasonably standardized 
+and therefore can be easily automatted for many situations.
+
+```{r}
+library(PKPDdatasets)
+library(PKPDmisc)
+library(dplyr)
+```
+
+```{r}
+data <- capitalize_names(sd_oral_richpk)
+sid_data <- data %>% filter(!duplicated(ID))
+```
+
+Given a traditional PK dataset that looks like:
+
+```{r}
+head(data)
+head(sid_data)
+```
+
+Here are a couple situations in which bins are appropriate
+
+
+1. given a breakpoint weight of 70 kg, determine how flag any individuals are above the breakpoint weight.
+
+Historically, this has been accomplished using ifelse statments like so
+```{r}
+binned_data <- sid_data %>% mutate(WTBIN = ifelse(WEIGHT > 70, 1, 0))
+head(binned_data)
+```
+
+This can be similarly accomplished with binning
+
+```{r}
+binned_data <- binned_data %>% mutate(WTBIN2 = set_bins(WEIGHT, breaks = 70))
+
+head(binned_data)
+```
+
+The 'problem' with the ifelse statement is it does not scale well under more complex circumstances.
+
+For example, given a more complex set of criteria such as weight less than 50, between 50 and 70, and 70 and above,
+the above example must be expanded to:
+
+```{r}
+binned_data <- sid_data %>% mutate(WTBIN = ifelse(WEIGHT < 50, 0, 
+                                              ifelse(WEIGHT >= 50 & WEIGHT < 70, 1,
+                                              ifelse(WEIGHT >= 70, 2, NA))))
+head(binned_data)
+```
+
+However, with the `set_bins` function and the `breaks` argument this is simple:
+
+```{r}
+binned_data <- binned_data %>% mutate(WTBIN2 = set_bins(WEIGHT, breaks = c(50, 70)))
+head(binned_data)
+```
+ 
+You can even find additional information about the ranges of each bin by setting `quiet=FALSE`
+
+```{r}
+ binned_data %>% 
+  mutate(WTBIN2 = set_bins(WEIGHT, breaks = c(50, 70), quiet=F)) %>% 
+  head
+```
+
+As you can see by default, the first and last bin are automatically set to a range of -Inf and Inf for
+the min and max values. This can be controlled using `lower_boundary` and `upper_boundary` such that
+the lower and upper bounds can either be controlled, and any values exceeding those bounds will be returned as `NA`. This might be useful if you are programmatically calculating the break points and already will have a lower bound specified. 
+
+For example by manually specifying a lower bound of 0:
+
+```{r}
+ binned_data %>% mutate(WTBIN2 = set_bins(WEIGHT, breaks = c(0, 50, 70), quiet=F)) %>% head
+
+```
+
+It adds an unnecessary -Inf to 0 bin. This can be turned off via `lower_bound=NULL`:
+
+```{r}
+ binned_data %>% 
+  mutate(WTBIN2 = set_bins(WEIGHT, breaks = c(0, 50, 70), lower_bound=NULL,  quiet=F)) %>% 
+  head
+```
+
+## Getting away from `quantile` and `cut`
+
+A common way of stratifying is to use quantile and the cut function to establish bins. The cut function, however,
+has poor defaults, such as not including the lowest value, and returns a string column specifying the range
+in each cut that must be further coerced to arrive at a numeric bin.
+
+```{r}
+sid_data %>% mutate(AGECUTS = cut(AGE, breaks = quantile(AGE), include.lowest=T),
+                    AGEBINS = as.numeric(AGECUTS)) %>% head
+
+
+```
+
+This is again simplified, especially as, by default, the breaks argument calculates the quantiles
+
+```{r}
+sid_data %>% mutate(AGEBINS = set_bins(AGE)) %>% head
+```
+
+
+For more fine-tuned levels, we can specify additional breaks
+
+```{r}
+sid_data %>% mutate(AGEBINS = set_bins(AGE, breaks = 
+                                         quantile(AGE, seq(0, 1, length.out = 10)),
+                                       quiet = F)) %>% head
+
+```
+
+
+
+## BETWEEEN
+
+A special case is when there is desire to test whether a value falls in some inclusive range, such
+as a specified therapeutic window. `set_bins` can also handle this situation with the `between` argument.
+
+In this case, a range can be specified, and all values inside the range (inclusive) will be assigned to bin 1, 
+with all values outside in either bin 0 (below range) or bin 2 (above range).
+
+For example, to understand the non-zero concentration measurements given a therapeutic window of 20-100, the following
+can be done:
+
+```{r}
+tw_data <- data %>% filter(CONC > 0) %>% mutate(TW = set_bins(CONC, between=c(20, 100)))
+
+head(tw_data)
+```
+
+This can easily be further examined:
+
+```{r}
+tw_data %>% group_by(TW) %>% summarize(n= n())
+
+tw_data %>% filter(TW ==2)
+```
+
+
+
+
+
+
