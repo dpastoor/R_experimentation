@@ -1,0 +1,39 @@
+---
+title: "define"
+author: "devin"
+date: "June 2, 2015"
+output: pdf_document
+---
+
+```{r}
+library(PKPDdatasets)
+library(knitr)
+```
+
+```{r}
+define_df <- data.frame(var_name = names(sd_oral_richpk))
+
+
+define_df$type <- unlist(lapply(sd_oral_richpk, typeof))
+
+units <- c(Dose = "ug", Conc = "ug/mL", Time = "hours")
+units
+define_df$units <- ""
+i <- 9
+for (i in 1:nrow(define_df)) {
+  for (j in seq_along(units)) {
+    if(toupper(define_df[i, c("var_name")]) == toupper(names(units)[[j]])) {
+      define_df[i, c("units")] <- units[[j]]
+    }
+  }
+  
+}
+```
+
+define file
+
+```{r, results='asis'}
+kable(define_df)
+```
+
+
