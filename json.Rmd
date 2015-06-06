@@ -1,0 +1,34 @@
+---
+title: "json"
+author: "devin"
+date: "April 26, 2015"
+output: html_document
+---
+
+```{r}
+library("PKPDdatasets")
+library(jsonlite)
+library(PKPDmisc)
+library(dplyr)
+```
+
+```{r}
+dat <- capitalize_names(sd_oral_richpk)
+write.csv(dat, "~/Repos/meteor-d3-scratch/conc-time.csv", row.names=F, quote = F)
+```
+
+```{r}
+head(dat)
+toJSON(dat)
+toJSON(dat,dataframe = "columns")
+
+bigdat <- lapply(1:10, function(x) {
+  dat %>% mutate(REP = x)
+})
+bigdat <- rbind_all(bigdat)
+
+library(microbenchmark)
+microbenchmark(toJSON(dat),
+               toJSON(bigdat), times = 3L)
+```
+
