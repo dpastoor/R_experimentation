@@ -1,0 +1,174 @@
+---
+title: "Automated writting of Nonmem scripts from a template"
+author: "Eliford"
+date: "5/14/2015"
+output: word_document
+---
+
+#Inputs
+* A template nonmem script
+* A table  of combination of parameters (scenarios to be simulated)
+* A dummy data file prepared according to the template nonmem script
+
+```{r}
+# required R packages
+library(stringr)
+library(dplyr)
+library(testthat)
+```
+
+
+
+A dataframe of combinations of parameters is generated, which will replace template values in a template run file.
+
+The template file will have replacement lines with the structure `param = <param>`, and the `<param` portion
+will be replaced by the associated value for that run number
+
+eg `PLC_P = <PLC_P>` will be replaced with `PLC_P = 3.8`
+
+```{r}
+# parameter combinations
+PLC_P <- c(3.8)
+EM_P <- c(10)
+c50_p <- c(0.01,0.03,0.07)
+BP_P <- c(101)
+CL_P <- c(6.32)
+V_P <- c(36.8)
+KA_P <- c(1.25)
+BSVPLC <- c(0.01,0.09,0.39)
+BSVEM <- c(0.01,0.09,0.39)
+BSVC50 <- c(0.01,0.09,0.39)
+BSVL <- c(25)
+BSVCL <- c(0.01,0.09,0.39)
+BSVV <- c(0.01,0.09,0.39)
+BSVKA <- c(0.01,0.09,0.39)
+BOVCL <- c(0.01)
+BOVPLC <- c(0.01)
+ERR1 <- c(0)
+ERR2 <- c(16)
+
+# lines to replace, with template <x> to be replaced by the parameter combinations
+replacement_patterns <- c(PLC_P = "PLC_P = <PLC_P>",
+EM_P = "EM_P = <EM_P>",
+c50_p = "c50_p = <c50_p>",
+BP_P = "BP_P = <BP_P>",
+CL_P = "CL_P = <CL_P>",
+V_P = "V_P = <V_P>",
+KA_P = "KA_P = <KA_P>",
+BSVPLC = "BSVPLC = <BSVPLC>",
+BSVEM = "BSVEM = <BSVEM>",
+BSVC50 = "BSVC50 = <BSVC50>",
+BSVL = "BSVL = <BSVL>",
+BSVCL = "BSVCL = <BSVCL>",
+BSVV = "BSVV = <BSVV>",
+BSVKA = "BSVKA = <BSVKA>",
+BOVCL = "BOVCL = <BOVCL>",
+BOVPLC = "BOVPLC = <BOVPLC>",
+ERR1 = "ERR1 = <ERR1>",
+ERR2 = "ERR2 = <ERR2>")
+
+replacement_df <- data.frame(expand.grid("PLC_P" = PLC_P,
+"EM_P" = EM_P,
+"c50_p" = c50_p,
+"BP_P" = BP_P,
+"CL_P" = CL_P,
+"V_P" = V_P,
+"KA_P" = KA_P,
+"BSVPLC" = BSVPLC,
+"BSVEM" = BSVEM,
+"BSVC50" = BSVC50,
+"BSVL" = BSVL,
+"BSVCL" = BSVCL,
+"BSVV" = BSVV,
+"BSVKA" = BSVKA,
+"BOVCL" = BOVCL,
+"BOVPLC" = BOVPLC,
+"ERR1" = ERR1,
+"ERR2" = ERR2))
+
+```
+
+The connection between the pattern to replace and the dataframe of replacement values is the name of the parameter, which is the name in the pattern vector and the name of the column in the associated replacement_df.
+
+So, for example, if 
+
+`pattern <- c(PLC_P = "PLC_P = <PLC_P>")`
+
+a replacement df will be created with a column named `PLC_P` filled with numeric values that will replace `<PLC_P>` in the pattern
+
+
+```{r}
+# replace portion of string inside of <> with replacement value
+replace_from_pattern <- function(string, value, pattern = "<.+>") {
+  str_replace_all(string, pattern, value)  
+}
+
+#' replace values from a template file
+#' @param file template file
+#' @param patterns patterns to match
+#' @param replacement_df dataframe of replacements
+#' @param output_dir set directory if not current directory
+#' @param file_name column in replacement containing requested output file name
+#' @param ... additional arguments for readLines
+#' @details 
+#' the pattern will first check for names, and if matching names in replacement df will follow, however
+#' if no names are detected, then will match by position
+
+replace_from_template <- function(file, patterns, replacement_df, output_dir = NULL,  ...) {
+  file_lines <- readLines(file, ...)
+  
+  # replace numeric values with the full string pattern that will be used from the pattern
+  # eg 0.1 --> CL = 0.1
+  for (i in seq_along(patterns)) {
+      replacement_df[[names(patterns)[[i]]]] <-  replace_from_pattern(patterns[i],
+                                                                  replacement_df[[names(patterns)[[i]]]])
+  }
+  
+  # if no file_name column automatically give file names that correspond to the row number 
+  if(is.null(replacement_df$file_name)) {
+      replacement_df$file_name <- paste0(1:nrow(replacement_df), ".mod")
+  }
+  
+  # loop through all combinations (1 per row) and write out the new file
+  for (i in 1:nrow(replacement_df)) {
+  new_file_lines <- str_replace_all(file_lines,
+                                    setNames(unlist(replacement_df[i, names(patterns)]), patterns))
+  
+      if (is.null(output_dir)) {
+        writeLines(new_file_lines, unlist(replacement_df[i, "file_name"]))
+      } else {
+        writeLines(new_file_lines, paste0(output_dir, unlist(replacement_df[i, "file_name"])))
+      }
+                    
+  }
+  return(TRUE)
+}
+
+```
+
+Test to see that `replace_from_pattern` function replaces properly
+```{r}
+# how replacing a value from a template line should work via this implementation
+test_string <- "PLC_P = <PLC_P>"
+test_value <- 0.1
+test_result<- "PLC_P = 0.1"
+expect_equal(replace_from_pattern(test_string, test_value), test_result)
+
+
+# check to make sure will replace in a vectorized manner as well
+test_df <- data.frame(PLC_P = c(0.1, 0.2, 0.3))
+
+test_df$PLC_Preplacement <- replace_from_pattern(test_string, test_df$PLC_P)
+
+test_df
+```
+
+Show that it works on a subset of all the combinations
+
+```{r}
+small_replacement <- replacement_df %>% slice(1:10)
+
+
+replace_from_template("template_run.mod", patterns, small_replacement)
+```
+

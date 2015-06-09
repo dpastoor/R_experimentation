@@ -1,0 +1,92 @@
+---
+title: "broom"
+author: "Devin"
+date: "March 29, 2015"
+output: html_document
+---
+
+```{r}
+library(PKPDmisc)
+library(dplyr)
+library(broom)
+```
+```{r}
+FUdata <- read_table("CS2.csv")
+```
+
+```{r}
+fudata <- FUdata %>% mutate(AGE1 = AGE/50,
+                  BSA1 = BSA/1.7,
+                  DOSE1 = DOSE/1000)
+```
+
+```{r}
+mb_clfit <- lm(log(FU_CL) ~ AGE1+BSA1+DOSE1+factor(SEX)+factor(MTX),data = fudata)
+```
+
+# default information
+
+Is not particularly programmatically designed, making it difficult to access elements, and you must visually search through lines
+
+```{r}
+mb_clfit
+```
+
+```{r}
+summary(mb_clfit)
+```
+
+# With broom
+
+Some key functions broom offers:
+
+### Tidy
+
+```{r}
+tidy(mb_clfit)
+```
+
+can even turn it into a nice table with knitr's `kable` function and using `results='asis'` in the rmarkdown chunk
+
+```{r, results='asis'}
+knitr::kable(tidy(mb_clfit))
+```
+
+
+### glance
+
+access the key statistics quickly
+
+```{r}
+glance(mb_clfit)
+```
+
+can pull them out by name easily
+```{r}
+glance(mb_clfit)$r.squared
+```
+
+
+### augment
+
+Gives you the fitted values, and makes it very easy to turn them into a plot
+
+```{r}
+aug <- augment(mb_clfit)
+head(aug)
+```
+
+```{r}
+library(ggplot2)
+ggplot(data = aug, aes(x = .fitted, y = .resid)) + 
+  geom_point() + 
+  base_theme() +
+  geom_hline(yintercept = 0, size = 1.25) +
+  labs(list(x = "Predicted log(CL)", y = "Residuals"))
+```
+
+```{r}
+devtools::session_info()
+```
+
+

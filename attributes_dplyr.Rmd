@@ -1,0 +1,70 @@
+---
+title: "attributes with dplyr"
+author: "Devin"
+date: "April 16, 2015"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+```
+
+```{r}
+foo <- data.frame(a = 1:5, b = 1:5, c=letters[1:5])
+```
+
+```{r}
+df <- foo
+attr(df$a, "label") <- "col a"
+attr(df$b, "label") <- "col b"
+attr(df$c, "label") <- "col c"
+
+```
+
+Throws an error
+```{r, eval = F}
+df %>% filter(a %in% c(1, 2))
+```
+
+```
+Error: column 'a' of type integer has unsupported attributes: label
+```
+
+Function to strip a vector of attribute names, while preserving non-specified attributes
+
+```{r}
+strip_attributes <- function(df, attr_names) {
+ 
+   df[] <- lapply(df, function(x, attr_names) {
+  lapply(attr_names, function(attr, x) {
+    if(!is.null(attributes(x)[[attr]])) {
+      attr(x, attr) <<- NULL
+    }
+    return(NULL)
+    },x)
+     
+    return(x)
+  }, attr_names)
+ 
+  return(df)
+}
+```
+
+```{r}
+foo %>% filter(a %in% c(1, 2))
+```
+
+can strip attributes in the analysis pipeline
+```{r}
+
+df %>% strip_attributes("label") %>% filter(a %in% c(1, 2))
+```
+
+Or do it once
+```{r}
+stripped_df <- df %>% strip_attributes("label")
+stripped_df %>% filter(a %in% c(1, 2))
+```
+
+
+
