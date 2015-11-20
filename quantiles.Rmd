@@ -1,0 +1,33 @@
+---
+title: "<TITLE>"
+author: "<AUTHOR>"
+date: '`r Sys.Date()`'
+output: html_document
+---
+
+```{r normalize_path, include=F, eval=F}
+# FOR INTERACTIVE USE
+# set this so can normalize wd from Rstudio project and when knitting
+# eg if your rmd is in /lab-notebook/<notebook>.Rmd
+# it should look like setwd(paste0(getwd(), "/lab-notebook/"))
+setwd(paste0(getwd(), "/<PATH>"))
+```
+
+```{r libraries, warning=FALSE, message=FALSE}
+library(PKPDmisc)
+library(reprex)
+library(PKPDdatasets)
+library(dplyr)
+library(knitr)
+```
+
+```{r}
+capitalize_names(sd_oral_richpk) %>%
+    group_by(TIME) %>% s_quantiles(CONC, c(0.05, 0.5, 0.95)) %>%
+    knitr::kable(digits = 2)
+```
+
+
+```{r}
+devtools::session_info()
+```
