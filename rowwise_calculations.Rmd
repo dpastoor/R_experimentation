@@ -1,0 +1,32 @@
+---
+title: "row-wise"
+author: "devin"
+date: "January 13, 2016"
+output: html_document
+---
+
+library(purrr)
+library(PKPDmisc)
+library(dplyr)
+library(PKPDdatasets)
+
+thresholds <- data_frame(low = c(5, 10, 15, 20),
+                         high = c(10, 20, 40, 60))
+thresholds
+
+## count number of individuals with a cmax within different therapeutic windows 
+
+thresholds %>% by_row(function(x, df) {
+ result_df <- df %>% group_by(ID) %>%
+   summarize(cmax = max(Conc)) %>% group_by(ID) %>%
+    summarize(isbetween = between(cmax, x[["low"]], x[["high"]])) 
+ return(sum(result_df$isbetween))
+}, sd_oral_richpk, .collate = "rows")
+
+
+thresholds %>% by_row(function(x, df, low_col_name, high_col_name) {
+ result_df <- df %>% group_by(ID) %>%
+   summarize(cmax = max(Conc)) %>% group_by(ID) %>%
+    summarize(isbetween = between(cmax, x[[low_col_name]], x[[high_col_name]])) 
+ return(sum(result_df$isbetween))
+}, sd_oral_richpk,"low", "high", .collate = "rows")
