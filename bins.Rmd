@@ -1,8 +1,8 @@
 ---
 title: "setting-bins"
 author: "devin"
-date: "April 11, 2015"
-output: html_document
+date: "November 15th, 2015"
+output: pdf_document
 ---
 
 Setting bins in R, while not particulary difficult, is usually reasonably standardized 
@@ -12,6 +12,7 @@ and therefore can be easily automatted for many situations.
 library(PKPDdatasets)
 library(PKPDmisc)
 library(dplyr)
+library(knitr)
 ```
 
 ```{r}
@@ -19,11 +20,16 @@ data <- capitalize_names(sd_oral_richpk)
 sid_data <- data %>% filter(!duplicated(ID))
 ```
 
-Given a traditional PK dataset that looks like:
+Given a traditional PK dataset (data) and one filtered for one observation per individual (sid_data) that looks like:
 
 ```{r}
-head(data)
-head(sid_data)
+head(data) %>% kable(digits =2)
+```
+
+\newpage
+
+```{r}
+head(sid_data) %>% kable(digits =2)
 ```
 
 Here are a couple situations in which bins are appropriate
@@ -33,16 +39,19 @@ Here are a couple situations in which bins are appropriate
 
 Historically, this has been accomplished using ifelse statments like so
 ```{r}
-binned_data <- sid_data %>% mutate(WTBIN = ifelse(WEIGHT > 70, 1, 0))
-head(binned_data)
+binned_data <- sid_data %>% 
+  mutate(WTBIN = ifelse(WEIGHT > 70, 1, 0))
+head(binned_data) %>% kable(digits =2)
 ```
 
-This can be similarly accomplished with binning
+This can be similarly accomplished with binning using the `set_bins` function from `PKPDmisc`
+
 
 ```{r}
-binned_data <- binned_data %>% mutate(WTBIN2 = set_bins(WEIGHT, breaks = 70))
+binned_data <- binned_data %>% 
+  mutate(WTBIN2 = set_bins(WEIGHT, breaks = 70))
 
-head(binned_data)
+head(binned_data)%>% kable(digits =2)
 ```
 
 The 'problem' with the ifelse statement is it does not scale well under more complex circumstances.
@@ -51,25 +60,31 @@ For example, given a more complex set of criteria such as weight less than 50, b
 the above example must be expanded to:
 
 ```{r}
-binned_data <- sid_data %>% mutate(WTBIN = ifelse(WEIGHT < 50, 0, 
-                                              ifelse(WEIGHT >= 50 & WEIGHT < 70, 1,
-                                              ifelse(WEIGHT >= 70, 2, NA))))
-head(binned_data)
+binned_data <- sid_data %>% 
+  mutate(WTBIN = ifelse(WEIGHT < 50, 0, 
+                        ifelse(WEIGHT >= 50 & WEIGHT < 70, 1,
+                               ifelse(WEIGHT >= 70, 2, NA))))
+head(binned_data)%>% kable(digits =2)
 ```
 
 However, with the `set_bins` function and the `breaks` argument this is simple:
 
 ```{r}
-binned_data <- binned_data %>% mutate(WTBIN2 = set_bins(WEIGHT, breaks = c(50, 70)))
-head(binned_data)
+binned_data <- binned_data %>% 
+  mutate(WTBIN2 = set_bins(WEIGHT, breaks = c(50, 70)))
+head(binned_data) %>% kable(digits =2)
 ```
- 
+
+\newpage
+
 You can even find additional information about the ranges of each bin by setting `quiet=FALSE`
 
 ```{r}
  binned_data %>% 
-  mutate(WTBIN2 = set_bins(WEIGHT, breaks = c(50, 70), quiet=F)) %>% 
-  head
+  mutate(WTBIN2 = set_bins(WEIGHT, 
+                           breaks = c(50, 70), 
+                           quiet=F)) %>% 
+  head %>% kable(digits =2)
 ```
 
 As you can see by default, the first and last bin are automatically set to a range of -Inf and Inf for
@@ -79,16 +94,21 @@ the lower and upper bounds can either be controlled, and any values exceeding th
 For example by manually specifying a lower bound of 0:
 
 ```{r}
- binned_data %>% mutate(WTBIN2 = set_bins(WEIGHT, breaks = c(0, 50, 70), quiet=F)) %>% head
-
+ binned_data %>% 
+  mutate(WTBIN2 = set_bins(WEIGHT, 
+                           breaks = c(0, 50, 70), 
+                           quiet=F)) %>% 
+  head %>% kable(digits =2)
 ```
 
 It adds an unnecessary -Inf to 0 bin. This can be turned off via `lower_bound=NULL`:
 
 ```{r}
  binned_data %>% 
-  mutate(WTBIN2 = set_bins(WEIGHT, breaks = c(0, 50, 70), lower_bound=NULL,  quiet=F)) %>% 
-  head
+  mutate(WTBIN2 = set_bins(WEIGHT, breaks = c(0, 50, 70), 
+                           lower_bound=NULL,  
+                           quiet=F)) %>% 
+  head %>% kable(digits =2)
 ```
 
 ## Getting away from `quantile` and `cut`
@@ -98,8 +118,12 @@ has poor defaults, such as not including the lowest value, and returns a string 
 in each cut that must be further coerced to arrive at a numeric bin.
 
 ```{r}
-sid_data %>% mutate(AGECUTS = cut(AGE, breaks = quantile(AGE), include.lowest=T),
-                    AGEBINS = as.numeric(AGECUTS)) %>% head
+sid_data %>% 
+  mutate(AGECUTS = cut(AGE, 
+                       breaks = quantile(AGE), 
+                       include.lowest=T),
+                    AGEBINS = as.numeric(AGECUTS)) %>% 
+  head %>% kable(digits =2)
 
 
 ```
@@ -107,22 +131,29 @@ sid_data %>% mutate(AGECUTS = cut(AGE, breaks = quantile(AGE), include.lowest=T)
 This is again simplified, especially as, by default, the breaks argument calculates the quantiles
 
 ```{r}
-sid_data %>% mutate(AGEBINS = set_bins(AGE)) %>% head
+sid_data %>% mutate(AGEBINS = set_bins(AGE)) %>%
+  head %>% kable(digits =2)
 ```
 
 
 For more fine-tuned levels, we can specify additional breaks
 
 ```{r}
-sid_data %>% mutate(AGEBINS = set_bins(AGE, breaks = 
-                                         quantile(AGE, seq(0, 1, length.out = 10)),
-                                       quiet = F)) %>% head
+sid_data %>% 
+  mutate(AGEBINS = set_bins(AGE, 
+                            breaks = quantile(AGE, 
+                                              seq(0, 1, length.out = 10)
+                                              ),
+                           quiet = F)
+         ) %>% 
+  head %>% 
+  kable(digits =2)
 
 ```
 
 
 
-## BETWEEEN
+## BETWEEN
 
 A special case is when there is desire to test whether a value falls in some inclusive range, such
 as a specified therapeutic window. `set_bins` can also handle this situation with the `between` argument.
@@ -134,21 +165,26 @@ For example, to understand the non-zero concentration measurements given a thera
 can be done:
 
 ```{r}
-tw_data <- data %>% filter(CONC > 0) %>% mutate(TW = set_bins(CONC, between=c(20, 100)))
+tw_data <- data %>% 
+  filter(CONC > 0) %>% 
+  mutate(TW = set_bins(CONC, between=c(20, 100)))
 
-head(tw_data)
+head(tw_data) %>% kable(digits =2)
 ```
 
 This can easily be further examined:
 
 ```{r}
-tw_data %>% group_by(TW) %>% summarize(n= n())
+tw_data %>% group_by(TW) %>% 
+  summarize(n= n()) %>% 
+  kable(digits =2)
 
-tw_data %>% filter(TW ==2)
+tw_data %>% filter(TW ==2) %>% kable(digits =2)
 ```
 
+\newpage
 
-
-
-
+```{r}
+devtools::session_info()
+```
 
